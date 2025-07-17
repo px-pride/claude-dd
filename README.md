@@ -5,7 +5,7 @@
 Just 3 files:
 1. `Dockerfile` - Defines the container environment
 2. `claude-dd` - The script that runs everything
-3. `quickstart.md` - This guide
+3. `README.md` - This guide
 
 ## One-Time Setup
 
