@@ -40,6 +40,16 @@ if docker container inspect "$CONTAINER" &>/dev/null; then
     echo "Image updated, recreating container..."
     docker rm -f "$CONTAINER" &>/dev/null
     RECREATE_NEEDED=true
+  else
+    # Check if claude-dd.sh is newer than container
+    CONTAINER_DATE=$(docker container inspect -f '{{.Created}}' "$CONTAINER" | xargs date +%s -d)
+    SCRIPT_DATE=$(stat -c %Y "$0" 2>/dev/null || stat -f %m "$0" 2>/dev/null)
+    
+    if [ "$SCRIPT_DATE" -gt "$CONTAINER_DATE" ]; then
+      echo "Script updated, recreating container..."
+      docker rm -f "$CONTAINER" &>/dev/null
+      RECREATE_NEEDED=true
+    fi
   fi
 fi
 
