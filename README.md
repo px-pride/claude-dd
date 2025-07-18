@@ -17,6 +17,13 @@ Just 3 files:
    
    # Add to PATH if needed
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+   
+   # IMPORTANT: If you have a ~/.bash_profile, it must source ~/.bashrc
+   # Check if .bash_profile exists and needs updating:
+   if [ -f ~/.bash_profile ] && ! grep -q "source.*bashrc\|\..*bashrc" ~/.bash_profile; then
+     echo -e '\n# Source .bashrc for non-login shells\nif [ -f ~/.bashrc ]; then\n    . ~/.bashrc\nfi' >> ~/.bash_profile
+   fi
+   
    source ~/.bashrc
    ```
 
