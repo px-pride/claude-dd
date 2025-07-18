@@ -46,5 +46,8 @@ RUN chown claude-user:claude-user /workspace
 # Switch to non-root user
 USER claude-user
 
+# Configure git to trust the workspace directory
+RUN git config --global --add safe.directory /workspace
+
 # Keep container running
 CMD ["tail", "-f", "/dev/null"]
