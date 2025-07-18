@@ -29,7 +29,13 @@ if [ "$BUILD_NEEDED" = true ] && [ -f "$DOCKERFILE" ]; then
 fi
 
 # Try to create container, or start if it exists
-docker run -d --name "$CONTAINER" -v $(pwd):/workspace -w /workspace "$IMAGE_NAME" 2>/dev/null || \
+# Mount both workspace and SSH directory for git access
+docker run -d --name "$CONTAINER" \
+  -v $(pwd):/workspace \
+  -v $HOME/.ssh:/home/claude-user/.ssh:ro \
+  -v $HOME/.gitconfig:/home/claude-user/.gitconfig:ro \
+  -w /workspace \
+  "$IMAGE_NAME" 2>/dev/null || \
   docker start "$CONTAINER" 2>/dev/null
 
 # Run claude

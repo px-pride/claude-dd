@@ -32,6 +32,11 @@ RUN useradd -m -s /bin/bash -u 10001 claude-user
 # Add claude-user to docker group
 RUN usermod -aG docker claude-user
 
+# Create SSH directory for claude-user with proper permissions
+RUN mkdir -p /home/claude-user/.ssh && \
+    chmod 700 /home/claude-user/.ssh && \
+    chown claude-user:claude-user /home/claude-user/.ssh
+
 # Set working directory
 WORKDIR /workspace
 
