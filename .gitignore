@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# But not these files...
+!claude-dd.sh
+!Dockerfile
+!LICENSE
+!README.md
+!.gitignore
