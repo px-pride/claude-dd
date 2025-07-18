@@ -67,13 +67,20 @@ if [ "$CREATE_CONTAINER" = true ]; then
         "$IMAGE_NAME" tail -f /dev/null
     
     # Set up SSH for non-root user with correct permissions
-    # Set up SSH for non-root user with correct permissions
     docker exec -u root "$CONTAINER" bash -c "
         if [ -d /root/.ssh-host ]; then
-            cp -r /root/.ssh-host /home/claude-user/.ssh 2>&1
+            # Remove existing .ssh directory to avoid nested structure
+            rm -rf /home/claude-user/.ssh 2>&1
+            # Create fresh .ssh directory
+            mkdir -p /home/claude-user/.ssh 2>&1
+            # Copy contents (not the directory itself) to avoid nesting
+            cp -r /root/.ssh-host/* /home/claude-user/.ssh/ 2>&1
+            # Set proper ownership and permissions
             chown -R claude-user:claude-user /home/claude-user/.ssh 2>&1
             chmod 700 /home/claude-user/.ssh 2>&1
             find /home/claude-user/.ssh -type f -exec chmod 600 {} \; 2>&1
+            # Ensure known_hosts has correct permissions if it exists
+            [ -f /home/claude-user/.ssh/known_hosts ] && chmod 644 /home/claude-user/.ssh/known_hosts 2>&1
         fi
     "
 else
