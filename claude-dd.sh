@@ -50,7 +50,6 @@ else
         if [ -n "$SCRIPT_DATE" ] && [ "$SCRIPT_DATE" -gt "$CONTAINER_DATE" ]; then
             echo "Script updated, recreating container..."           
             CREATE_CONTAINER=true
-        else
         fi
     fi
 fi
