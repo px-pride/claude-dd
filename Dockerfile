@@ -26,8 +26,21 @@ RUN apt update && apt install -y \
 # Install Claude Code (update this with the correct package name)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Create a non-root user (use a different UID to avoid conflicts)
-RUN useradd -m -s /bin/bash -u 10001 claude-user
+# Accept UID as build argument (defaults to 10001 if not provided)
+ARG HOST_UID=10001
+
+# Create a non-root user with the same UID as the host user
+# First check if the UID already exists, if so, rename that user
+RUN if id -u ${HOST_UID} >/dev/null 2>&1; then \
+        existing_user=$(getent passwd ${HOST_UID} | cut -d: -f1); \
+        existing_gid=$(id -g ${HOST_UID}); \
+        existing_group=$(getent group ${existing_gid} | cut -d: -f1); \
+        groupmod -n claude-user ${existing_group}; \
+        usermod -l claude-user -d /home/claude-user -m ${existing_user}; \
+    else \
+        groupadd -g ${HOST_UID} claude-user; \
+        useradd -m -s /bin/bash -u ${HOST_UID} -g claude-user claude-user; \
+    fi
 
 # Add claude-user to docker group
 RUN usermod -aG docker claude-user

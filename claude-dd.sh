@@ -9,8 +9,8 @@ IMAGE_REBUILT=false
 # Build image if needed
 if [ -f "$DOCKERFILE" ]; then
     if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
-        echo "Building image..."
-        docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" "$(dirname "$DOCKERFILE")"
+        echo "Building image with UID=$(id -u)..."
+        docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" --build-arg HOST_UID=$(id -u) "$(dirname "$DOCKERFILE")"
         IMAGE_REBUILT=true
     else
         # Check if Dockerfile is newer than image
@@ -18,8 +18,8 @@ if [ -f "$DOCKERFILE" ]; then
         FILE_DATE=$(stat -c %Y "$DOCKERFILE" 2>/dev/null || stat -f %m "$DOCKERFILE" 2>/dev/null)
         
         if [ "$FILE_DATE" -gt "$IMAGE_DATE" ]; then
-            echo "Dockerfile updated, rebuilding image..."
-            docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" "$(dirname "$DOCKERFILE")"
+            echo "Dockerfile updated, rebuilding image with UID=$(id -u)..."
+            docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" --build-arg HOST_UID=$(id -u) "$(dirname "$DOCKERFILE")"
             IMAGE_REBUILT=true
         fi
     fi
