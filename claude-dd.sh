@@ -28,6 +28,21 @@ if [ "$BUILD_NEEDED" = true ] && [ -f "$DOCKERFILE" ]; then
   docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" "$(dirname "$DOCKERFILE")"
 fi
 
+# Check if container needs recreation
+RECREATE_NEEDED=false
+
+if docker container inspect "$CONTAINER" &>/dev/null; then
+  # Container exists, check if image is newer
+  CONTAINER_IMAGE=$(docker container inspect -f '{{.Image}}' "$CONTAINER")
+  CURRENT_IMAGE=$(docker image inspect -f '{{.Id}}' "$IMAGE_NAME")
+  
+  if [ "$CONTAINER_IMAGE" != "$CURRENT_IMAGE" ]; then
+    echo "Image updated, recreating container..."
+    docker rm -f "$CONTAINER" &>/dev/null
+    RECREATE_NEEDED=true
+  fi
+fi
+
 # Try to create container, or start if it exists
 # Mount both workspace and SSH directory for git access
 docker run -d --name "$CONTAINER" \
