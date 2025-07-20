@@ -13,6 +13,11 @@ RUN apt update && apt install -y \
     ca-certificates \
     gnupg \
     lsb-release \
+    mysql-server \
+    mysql-client \
+    postgresql \
+    postgresql-client \
+    postgresql-contrib \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
     && echo \
@@ -42,8 +47,18 @@ RUN if id -u ${HOST_UID} >/dev/null 2>&1; then \
         useradd -m -s /bin/bash -u ${HOST_UID} -g claude-user claude-user; \
     fi
 
-# Add claude-user to docker group
-RUN usermod -aG docker claude-user
+# Add claude-user to docker group with matching host GID
+RUN groupmod -g 1001 docker && usermod -aG docker claude-user
+
+# Configure MySQL and PostgreSQL to run as claude-user
+RUN mkdir -p /etc/mysql/conf.d && \
+    echo "[mysqld]\nskip-grant-tables\nuser=claude-user" > /etc/mysql/conf.d/skip-grant.cnf && \
+    mkdir -p /etc/postgresql-common && \
+    echo "create_main_cluster = false" > /etc/postgresql-common/createcluster.conf && \
+    mkdir -p /var/run/mysqld && \
+    chown -R claude-user:claude-user /var/run/mysqld /var/lib/mysql && \
+    mkdir -p /var/run/postgresql && \
+    chown -R claude-user:claude-user /var/run/postgresql /var/lib/postgresql
 
 # Create SSH directory for claude-user with proper permissions
 RUN mkdir -p /home/claude-user/.ssh && \
@@ -56,11 +71,29 @@ WORKDIR /workspace
 # Change ownership of workspace to claude-user
 RUN chown claude-user:claude-user /workspace
 
+# Create database startup scripts that don't require sudo
+RUN echo '#!/bin/bash\nif [ ! -d "/var/lib/mysql/mysql" ]; then\n  mysqld --initialize-insecure --user=claude-user --datadir=/var/lib/mysql\nfi\nmysqld --user=claude-user --datadir=/var/lib/mysql --socket=/var/run/mysqld/mysqld.sock --pid-file=/var/run/mysqld/mysqld.pid &' > /usr/local/bin/start-mysql && \
+    chmod +x /usr/local/bin/start-mysql && \
+    echo '#!/bin/bash\nif [ ! -d "/var/lib/postgresql/data" ]; then\n  initdb -D /var/lib/postgresql/data\nfi\npostgres -D /var/lib/postgresql/data &' > /usr/local/bin/start-postgres && \
+    chmod +x /usr/local/bin/start-postgres && \
+    echo '#!/bin/bash\nmysqladmin -u root -S /var/run/mysqld/mysqld.sock shutdown' > /usr/local/bin/stop-mysql && \
+    chmod +x /usr/local/bin/stop-mysql && \
+    echo '#!/bin/bash\npg_ctl -D /var/lib/postgresql/data stop' > /usr/local/bin/stop-postgres && \
+    chmod +x /usr/local/bin/stop-postgres
+
 # Switch to non-root user
 USER claude-user
 
+# Set PATH environment variable globally
+ENV PATH="/home/claude-user/.local/bin:$PATH"
+
 # Configure git to trust the workspace directory
 RUN git config --global --add safe.directory /workspace
+
+# Add ~/.local/bin to PATH and create .bash_profile
+RUN mkdir -p /home/claude-user/.local/bin && \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/claude-user/.bashrc && \
+    printf '# Source .bashrc for login shells\nif [ -f ~/.bashrc ]; then\n    . ~/.bashrc\nfi\n' > /home/claude-user/.bash_profile
 
 # Keep container running
 CMD ["tail", "-f", "/dev/null"]
