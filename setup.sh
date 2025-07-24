@@ -140,30 +140,18 @@ echo
 echo "First run will build the Docker image (this takes a few minutes)"
 echo
 
-# Offer to test the installation
-read -p "Would you like to test the installation now? (y/N) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Testing claude-dd..."
-    
-    # Create a test directory
-    TEST_DIR="/tmp/claude-dd-test-$$"
-    mkdir -p "$TEST_DIR"
-    cd "$TEST_DIR"
-    
-    echo "Created test directory: $TEST_DIR"
-    echo "Running: claude-dd --version"
-    
-    if [ "$PATH_UPDATED" = true ]; then
-        # Use full path since PATH isn't updated in current shell
-        ~/.local/bin/claude-dd --version || print_warning "Test failed - this is normal if Claude Code isn't in the container yet"
-    else
-        claude-dd --version || print_warning "Test failed - this is normal if Claude Code isn't in the container yet"
-    fi
-    
-    # Cleanup
-    cd - >/dev/null
-    rm -rf "$TEST_DIR"
+# Verify installation
+echo "Verifying installation..."
+if [ -f ~/.local/bin/claude-dd ] && [ -x ~/.local/bin/claude-dd ]; then
+    print_status "claude-dd is installed and executable at ~/.local/bin/claude-dd"
+fi
+
+if [ -f ~/claude-docker/Dockerfile ]; then
+    print_status "Dockerfile is installed at ~/claude-docker/Dockerfile"
+fi
+
+if [ -f ~/claude-docker/claude-dd-prompt.txt ]; then
+    print_status "Prompt file is installed at ~/claude-docker/claude-dd-prompt.txt"
 fi
 
 echo
