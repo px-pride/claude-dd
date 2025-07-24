@@ -180,6 +180,12 @@ if [ "$CREATE_CONTAINER" = true ]; then
                 chmod +x /home/claude-user/.local/bin/claude-dd 2>&1
                 chown claude-user:claude-user /home/claude-user/.local/bin/claude-dd 2>&1
             fi
+            
+            # Copy prompt file if it exists
+            if [ -f /workspace/claude-dd-prompt.txt ]; then
+                cp /workspace/claude-dd-prompt.txt /home/claude-user/.claude-dd-prompt.txt 2>&1
+                chown claude-user:claude-user /home/claude-user/.claude-dd-prompt.txt 2>&1
+            fi
         "
     else
         # In container: copy claude-dd from workspace
@@ -201,6 +207,12 @@ if [ "$CREATE_CONTAINER" = true ]; then
                 chmod +x /home/claude-user/.local/bin/claude-dd
                 chown claude-user:claude-user /home/claude-user/.local/bin/claude-dd
             fi
+            
+            # Copy prompt file if it exists
+            if [ -f /workspace/claude-dd-prompt.txt ]; then
+                cp /workspace/claude-dd-prompt.txt /home/claude-user/.claude-dd-prompt.txt
+                chown claude-user:claude-user /home/claude-user/.claude-dd-prompt.txt
+            fi
         "
     fi
 else
@@ -208,5 +220,11 @@ else
     docker start "$CONTAINER" &>/dev/null
 fi
 
-# Execute claude as non-root user
-docker exec -it -u claude-user "$CONTAINER" claude --dangerously-skip-permissions
+# Execute claude as non-root user with container prompt if available
+if docker exec "$CONTAINER" test -f /home/claude-user/.claude-dd-prompt.txt; then
+    # Use the prompt file if it exists in the container
+    docker exec -it -u claude-user "$CONTAINER" bash -c 'claude --dangerously-skip-permissions -m "$(cat /home/claude-user/.claude-dd-prompt.txt)"'
+else
+    # Fallback to no prompt
+    docker exec -it -u claude-user "$CONTAINER" claude --dangerously-skip-permissions
+fi
