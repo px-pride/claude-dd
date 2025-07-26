@@ -223,7 +223,7 @@ fi
 # Execute claude as non-root user with container prompt if available
 if docker exec "$CONTAINER" test -f /home/claude-user/.claude-dd-prompt.txt; then
     # Use the prompt file if it exists in the container
-    docker exec -it -u claude-user "$CONTAINER" bash -c 'claude --dangerously-skip-permissions -m "$(cat /home/claude-user/.claude-dd-prompt.txt)"'
+    docker exec -it -u claude-user "$CONTAINER" bash -c 'claude --dangerously-skip-permissions "$(cat /home/claude-user/.claude-dd-prompt.txt)"'
 else
     # Fallback to no prompt
     docker exec -it -u claude-user "$CONTAINER" claude --dangerously-skip-permissions
