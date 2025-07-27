@@ -1,3 +1,9 @@
+# ⚠️ DEPRECATED - Use JailLM Instead
+
+**This project is deprecated. Please use [JailLM](https://github.com/px-pride/jaillm) for a more robust solution.**
+
+---
+
 # Claude Docker Quick Start Guide
 
 ## What You Need
@@ -45,12 +51,31 @@ claude-dd
 # That's it! You're now in Claude Code with --dangerously-skip-permissions
 ```
 
+### Network Modes
+
+By default, containers use **host network mode** - all ports are automatically accessible from your host system. This is ideal for web development.
+
+```bash
+# Default: Host network mode (all ports accessible)
+claude-dd
+
+# Port mapping mode: Specify individual ports
+claude-dd -p 8000:8000 3001:3001
+
+# Multiple port mappings
+claude-dd -p 8080:80 8443:443 3306:3306
+
+# View help
+claude-dd -h
+```
+
 ## How It Works
 
 - First run in a directory creates a container named `claude-[directory-name]`
 - Subsequent runs reuse the existing container
 - Each directory gets its own isolated container
 - Containers persist until you manually remove them
+- Databases (MySQL/PostgreSQL) persist in `.claude-dd/` directory
 
 ## Multiple Projects
 
@@ -70,10 +95,13 @@ claude-dd  # Creates container: claude-api
 
 ```bash
 # Use a different Dockerfile
-claude-dd ~/my-dockerfiles/Dockerfile.gpu
+claude-dd -d ~/my-dockerfiles/Dockerfile.gpu
 
 # Or
-claude-dd ./Dockerfile.dev
+claude-dd -d ./Dockerfile.dev
+
+# With port mappings
+claude-dd -d ~/my-dockerfiles/Dockerfile.custom -p 8000:8000
 ```
 
 ## Container Management
@@ -104,6 +132,7 @@ claude-dd  # Rebuilds image if Dockerfile is newer
 
 - **Your files are safe** - They're in your normal directories, just mounted into containers
 - **Containers persist** - Install tools once, they stay installed in that container
+- **Databases persist** - MySQL/PostgreSQL data stored in `.claude-dd/` survives container recreation
 - **Performance** - On WSL2, keep projects in the Linux filesystem (not `/mnt/c/`)
 
 ## Troubleshooting
